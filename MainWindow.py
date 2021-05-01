@@ -15,7 +15,9 @@ class MainWindow(QMainWindow, MainWindowUI):
         self.setupUi(self)
         self.setWindowTitle("My Tetris")
         self._pressed = False
+        self._ready = False
         self._kit_i = -1
+        self._pos = []
 
         images_dir = os.path.join(os.path.dirname(__file__), 'images')
         self._images = {
@@ -83,21 +85,23 @@ class MainWindow(QMainWindow, MainWindowUI):
             self._kit_i = 2
             self.on_elem_clicked(e)
 
+        def field_mouse_move_event(e: QMouseEvent):
+            if self._kit_i >= 0:
+                idx = self.field.indexAt(e.pos())
+                self.on_field(idx)
+
         self.field.mousePressEvent = field_mouse_press_event
+        #self.field.mouseDoubleClickEvent = field_mouse_press_event
         self.elem1.mousePressEvent = elem1_mouse_press_event
         self.elem2.mousePressEvent = elem2_mouse_press_event
         self.elem3.mousePressEvent = elem3_mouse_press_event
 
-#        self.newGamePushButton.clicked.connect(self.on_new_game)
-
-#        self.new_game()
+    def w(self):
+        self.new_game()
 
     def game_resize(self, game: Game) -> None:
         model = QStandardItemModel(game.row_count, game.col_count)
         self.field.setModel(model)
-        #self.elem1.setModel(QStandardItemModel(len(self._game.kit[0].it), len(self._game.kit[0].it[0])))
-        #self.elem2.setModel(QStandardItemModel(len(self._game.kit[1].it), len(self._game.kit[1].it[0])))
-        #self.elem3.setModel(QStandardItemModel(len(self._game.kit[2].it), len(self._game.kit[2].it[0])))
         self.elem1.setModel(QStandardItemModel(4, 4))
         self.elem2.setModel(QStandardItemModel(4, 4))
         self.elem3.setModel(QStandardItemModel(4, 4))
@@ -120,7 +124,10 @@ class MainWindow(QMainWindow, MainWindowUI):
     def on_field_paint(self, e: QModelIndex, painter: QPainter, option: QStyleOptionViewItem):
         item = self._game.field[e.row()][e.column()]
         if item == 1:
-            img = self._images['square']
+            img = self._images['red']
+            img.render(painter, QRectF(option.rect))
+        if item == -1:
+            img = self._images['blue']
             img.render(painter, QRectF(option.rect))
 
     def on_elem_paint(self, m: int, e: QModelIndex, painter: QPainter, option: QStyleOptionViewItem):
@@ -128,7 +135,7 @@ class MainWindow(QMainWindow, MainWindowUI):
         if e.row() < len(tmp) and e.column() < len(tmp[0]):
             item = tmp[e.row()][e.column()]
             if item == 1:
-                img = self._images['square']
+                img = self._images['red']
                 img.render(painter, QRectF(option.rect))
 
     #  def on_item_paint(self, e: QModelIndex, painter: QPainter, option: QStyleOptionViewItem) -> None:
@@ -149,12 +156,24 @@ class MainWindow(QMainWindow, MainWindowUI):
 
     def on_elem_clicked(self, me: QMouseEvent = None) -> None:
         if me.button() == Qt.LeftButton:
+            self._game.clear_opp()
             self._pressed = True
             self._game.elem_left_mouse_click(self._kit_i)
         self.update_view()
 
     def on_field_clicked(self, e: QModelIndex, me: QMouseEvent = None) -> None:
-        if self._pressed and me.button() == Qt.LeftButton:
-            scs = self._game.field_left_mouse_click(e.row(), e.column())
-            self._pressed = not scs
+        if me.button() == Qt.LeftButton:
+            if self._ready and e.row() == self._pos[0] and e.column() == self._pos[1]:
+                self._game.field_left_mouse_click(e.row(), e.column(), True)
+                self._pressed = False
+                self._ready = False
+                self._pos = []
+            elif self._pressed:
+                self._game.clear_opp()
+                self._ready = self._game.field_left_mouse_click(e.row(), e.column(), False)
+                self._pos = [e.row(), e.column()]
         self.update_view()
+
+    def on_field(self, idx):
+        return
+        #self._game.show_opp(idx.row(), idx.column())

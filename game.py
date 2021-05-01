@@ -69,22 +69,21 @@ class Game:
         cc = len(self._field[0])
         if r + len(elem) > rc or c + len(elem[0]) > cc:
             return False
-       # if self._f:
-        #    print(r, c)
-         #   print()
-          #  print(elem)
-           # self._f = False
         for i, j in all_combs(len(elem), len(elem[0])):
             if elem[i][j] == 1 and self.field[r + i][c + j] == 1:
                 return False
         return True
 
-    def _place(self, elem, r, c):
+    def _place(self, elem, r, c, flag):
         re = len(elem)
         ce = len(elem[0])
         for i in range(r, r + re):
             for j in range(c, c + ce):
-                self._field[i][j] = self.field[i][j] + elem[i - r][j - c]
+                if not flag:
+                    mult = 1 if self._field[i][j] == 1 else -1
+                    self._field[i][j] = mult * (self._field[i][j] + elem[i - r][j - c])
+                else:
+                    self._field[i][j] = self.field[i][j] ** 2
 
     def _check_rows(self):
         res = []
@@ -140,24 +139,24 @@ class Game:
         if self._state == GameState.PLAYING:
             self._curr = i
 
-    def field_left_mouse_click(self, r, c):
-        if self._state == GameState.LOSE:
-            print("Game over")
-        for elem in self.kit:
-            print(elem.it)
-            print()
-        print("------------------------")
+    def field_left_mouse_click(self, r, c, flag):
         if self._state == GameState.PLAYING:
-            if self._can_placed(self._kit[self._curr].it, r, c):
-                self._place(self._kit[self._curr].it, r, c)
+            if self._curr is not None:
+                if self._can_placed(self._kit[self._curr].it, r, c):
+                    self._place(self._kit[self._curr].it, r, c, flag)
+                    if flag:
+                        self._kit[self._curr] = Element(ELEMENTS_TYPES[rnd.randint(0, len(ELEMENTS_TYPES)) - 1])
 
-                self._kit[self._curr] = Element(ELEMENTS_TYPES[rnd.randint(0, len(ELEMENTS_TYPES)) - 1])
+                        for i in self._check_rows():
+                            self._clear_row(i)
+                        for i in self._check_columns():
+                            self._clear_column(i)
 
-                for i in self._check_rows():
-                    self._clear_row(i)
-                for i in self._check_columns():
-                    self._clear_column(i)
-
-                self._update()
-                return True
+                    self._update()
+                    return True
         return False
+
+    def clear_opp(self):
+        for i, j in all_combs(self.row_count, self.col_count):
+            if self.field[i][j] < 0:
+                self._field[i][j] = 0
