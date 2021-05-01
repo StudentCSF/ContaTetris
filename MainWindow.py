@@ -5,7 +5,7 @@ from game import Game, GameState
 
 from PyQt5 import QtSvg
 from PyQt5.QtGui import QMouseEvent, QPainter, QStandardItemModel
-from PyQt5.QtWidgets import QMainWindow, QItemDelegate, QStyleOptionViewItem, QDialog
+from PyQt5.QtWidgets import QMainWindow, QItemDelegate, QStyleOptionViewItem, QMessageBox
 from PyQt5.QtCore import QModelIndex, QRectF, Qt
 
 
@@ -18,8 +18,10 @@ class MainWindow(QMainWindow, MainWindowUI):
         self._ready = False
         self._kit_i = -1
         self._pos = []
-        self.dialog = QDialog()
-        self.dialog.setWindowTitle('Game over')
+
+        self.dialog = QMessageBox()
+        self.dialog.setWindowTitle('Oops')
+        self.dialog.setText('Game over')
 
         self.actionQuit.triggered.connect(self.close)
 
