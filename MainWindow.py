@@ -19,6 +19,10 @@ class MainWindow(QMainWindow, MainWindowUI):
         self._kit_i = -1
         self._pos = []
 
+        self.actionQuit.triggered.connect(self.close)
+
+        self.actionNew_game.triggered.connect(self.on_new_game)
+
         images_dir = os.path.join(os.path.dirname(__file__), 'images')
         self._images = {
             os.path.splitext(f)[0]: QtSvg.QSvgRenderer(os.path.join(images_dir, f))
@@ -85,19 +89,10 @@ class MainWindow(QMainWindow, MainWindowUI):
             self._kit_i = 2
             self.on_elem_clicked(e)
 
-        def field_mouse_move_event(e: QMouseEvent):
-            if self._kit_i >= 0:
-                idx = self.field.indexAt(e.pos())
-                self.on_field(idx)
-
         self.field.mousePressEvent = field_mouse_press_event
-        #self.field.mouseDoubleClickEvent = field_mouse_press_event
         self.elem1.mousePressEvent = elem1_mouse_press_event
         self.elem2.mousePressEvent = elem2_mouse_press_event
         self.elem3.mousePressEvent = elem3_mouse_press_event
-
-    def w(self):
-        self.new_game()
 
     def game_resize(self, game: Game) -> None:
         model = QStandardItemModel(game.row_count, game.col_count)
@@ -138,22 +133,6 @@ class MainWindow(QMainWindow, MainWindowUI):
                 img = self._images['red']
                 img.render(painter, QRectF(option.rect))
 
-    #  def on_item_paint(self, e: QModelIndex, painter: QPainter, option: QStyleOptionViewItem) -> None:
-    #     item = self._game[e.row(), e.column()]
-    #    if item.state == SapperCellState.FLAG:
-    #       img = self._images['flag']
-    #  elif item.state == SapperCellState.PROBLEM:
-    #     img = self._images['problem']
-    # elif item.state == SapperCellState.OPENED and item.mine:
-    #    img = self._images['mine_red']
-    # elif self._game.state == SapperGameState.FAIL and item.mine:
-    #    img = self._images['mine']
-    # elif item.state == SapperCellState.OPENED:
-    #    img = self._images['type' + str(item.around)]
-    # else:
-    #   img = self._images['closed']
-    # img.render(painter, QRectF(option.rect))
-
     def on_elem_clicked(self, me: QMouseEvent = None) -> None:
         if me.button() == Qt.LeftButton:
             self._game.clear_opp()
@@ -173,7 +152,3 @@ class MainWindow(QMainWindow, MainWindowUI):
                 self._ready = self._game.field_left_mouse_click(e.row(), e.column(), False)
                 self._pos = [e.row(), e.column()]
         self.update_view()
-
-    def on_field(self, idx):
-        return
-        #self._game.show_opp(idx.row(), idx.column())
