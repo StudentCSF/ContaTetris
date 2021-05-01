@@ -1,12 +1,12 @@
 import os
 
 from MainWindowUI import Ui_MainWindow as MainWindowUI
-from game import Game, GameState, Element
+from game import Game, GameState
 
 from PyQt5 import QtSvg
 from PyQt5.QtGui import QMouseEvent, QPainter, QStandardItemModel
-from PyQt5.QtWidgets import QMainWindow, QItemDelegate, QStyleOptionViewItem
-from PyQt5.QtCore import QModelIndex, QRectF, QTimer, Qt
+from PyQt5.QtWidgets import QMainWindow, QItemDelegate, QStyleOptionViewItem, QDialog
+from PyQt5.QtCore import QModelIndex, QRectF, Qt
 
 
 class MainWindow(QMainWindow, MainWindowUI):
@@ -18,6 +18,8 @@ class MainWindow(QMainWindow, MainWindowUI):
         self._ready = False
         self._kit_i = -1
         self._pos = []
+        self.dialog = QDialog()
+        self.dialog.setWindowTitle('Game over')
 
         self.actionQuit.triggered.connect(self.close)
 
@@ -107,6 +109,8 @@ class MainWindow(QMainWindow, MainWindowUI):
         self.elem1.viewport().update()
         self.elem2.viewport().update()
         self.elem3.viewport().update()
+        if self._game.state == GameState.LOSE:
+            self.dialog.show()
 
     def new_game(self):
         self._game.new_game()
