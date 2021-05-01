@@ -3,12 +3,12 @@ from enum import Enum
 
 ELEMENTS_TYPES = [[[1]],
                   [[1, 1], [1, 1]],
-                  [[1, 1], [1, 1], [1, 1]],
+                  [[1, 1, 1], [1, 1, 1], [1, 1, 1]],
                   [[1, 1, 1]],
                   [[1, 1], [1, 0]],
                   [[1], [1]],
                   [[0, 1, 0], [1, 1, 1]],
-                  [[1, 1, 1], [0, 0, 1], [0, 1, 1]],
+                  [[1, 1, 1], [0, 0, 1], [0, 0, 1]],
                   [[1, 1], [0, 1], [0, 1]],
                   [[1], [1, 1, 1]],
                   [[1, 1, 1, 1]],
@@ -39,29 +39,42 @@ class Element:
 
 class Game:
     def __init__(self, row_count, col_count):
-        self._field = [[0 for _ in range(col_count)] for _ in range(row_count)]
+        self._field = []
         self._rc = row_count
         self._cc = col_count
         self._state = GameState.UNK
-        self._kit = [Element(ELEMENTS_TYPES[rnd.randint(0, len(ELEMENTS_TYPES)) - 1]) for _ in range(3)]
+        self._kit = []
+        self._curr = None
+        self._f = True
         self.new_game()
 
     def new_game(self):
+        self._field = [[0 for _ in range(self.col_count)] for _ in range(self.row_count)]
+        self._kit = [Element(ELEMENTS_TYPES[rnd.randint(0, len(ELEMENTS_TYPES)) - 1]) for _ in range(3)]
         self._state = GameState.PLAYING
 
     def _game_over(self):
         for el in self.kit:
-            r = len(el)
-            c = len(el[0])
+            r = len(el.it)
+            c = len(el.it[0])
             dr = self._rc - r
             dc = self._cc - c
             for n in range(dr + 1):
                 for m in range(dc + 1):
-                    if self.can_placed(el, n, m): return False
+                    if self._can_placed(el.it, n, m): return False
         return True
 
     def _can_placed(self, elem, r, c):
-        for i, j in all_combs((len(elem), len(elem[0]))):
+        rc = len(self._field)
+        cc = len(self._field[0])
+        if r + len(elem) > rc or c + len(elem[0]) > cc:
+            return False
+       # if self._f:
+        #    print(r, c)
+         #   print()
+          #  print(elem)
+           # self._f = False
+        for i, j in all_combs(len(elem), len(elem[0])):
             if elem[i][j] == 1 and self.field[r + i][c + j] == 1:
                 return False
         return True
@@ -70,16 +83,34 @@ class Game:
         re = len(elem)
         ce = len(elem[0])
         for i in range(r, r + re):
-            for j in range(c, ce):
-                self._field[i][j] = self.field[i][j] + elem[i - r][j - ce]
+            for j in range(c, c + ce):
+                self._field[i][j] = self.field[i][j] + elem[i - r][j - c]
 
-    def check_lines(self):
+    def _check_rows(self):
         res = []
         for i in range(len(self._field)):
             j = 0
             while j < len(self._field) and self._field[i][j] == 1:
                 j += 1
-            if j == len(self._field): res.__add__(i)
+            if j == len(self._field): res.append(i)
+        return res
+
+    def _check_columns(self):
+        res = []
+        for j in range(len(self._field)):
+            i = 0
+            while i < len(self._field) and self._field[i][j] == 1:
+                i += 1
+            if i == len(self._field): res.append(j)
+        return res
+
+    def _clear_row(self, r):
+        for j in range(len(self._field)):
+            self._field[r][j] = 0
+
+    def _clear_column(self, c):
+        for i in range(len(self._field)):
+            self._field[i][c] = 0
 
     @property
     def field(self):
@@ -102,4 +133,31 @@ class Game:
         return self._kit
 
     def _update(self):
+        if self._game_over(): self._state = GameState.LOSE
         return
+
+    def elem_left_mouse_click(self, i):
+        if self._state == GameState.PLAYING:
+            self._curr = i
+
+    def field_left_mouse_click(self, r, c):
+        if self._state == GameState.LOSE:
+            print("Game over")
+        for elem in self.kit:
+            print(elem.it)
+            print()
+        print("------------------------")
+        if self._state == GameState.PLAYING:
+            if self._can_placed(self._kit[self._curr].it, r, c):
+                self._place(self._kit[self._curr].it, r, c)
+
+                self._kit[self._curr] = Element(ELEMENTS_TYPES[rnd.randint(0, len(ELEMENTS_TYPES)) - 1])
+
+                for i in self._check_rows():
+                    self._clear_row(i)
+                for i in self._check_columns():
+                    self._clear_column(i)
+
+                self._update()
+                return True
+        return False
